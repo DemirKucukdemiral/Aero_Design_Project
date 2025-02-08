@@ -1,11 +1,14 @@
-"""
-Data for Ariane 5 Core (Main) Stage : launch mass = 184,700 kg, structural mass = 14,700 kg, propellant mass = 170,000 kg. Isp = 432s (in vacuum), thrust T = 1,390 kN (vacuum) or 960 kN at Sea Level. Burn time = 540s
 
-Data for Ariane 5 Solid Rocket Booster (data for 1 of 2): launch mass = 268,000 kg, structural mass = 30,200 kg, propellant mass = 237,800 kg. Isp = 274.5s, thrust T = 6,470 kN (Sea Level). Burn time = 130s
+###===--------------------------------------------===###
+# Script:       ADP_P1Q1.py
+# Authors:       Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, Cameron Norrington 2873038N, Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
+# Created on:   2025-02-08
+# Last Modified: 2025-02-08
+# Description:  [Short description of the script]
+# Version:      1.0
+###===--------------------------------------------===###    
 
-Data for Ariane 5 Upper Stage (Cryogenic) : launch mass = 19,440 kg, structural mass = 4,540 kg, propellant mass = 14,900. Isp = 446s, thrust T = 62.7 kN. Burn time = 945s
 
-"""
 from dataclasses import dataclass
 import numpy as np
 import math
@@ -99,9 +102,14 @@ class Ariane:
         return velocity
     
 
-rocket = Ariane()
 
-rocket.structural_eff("srb")
+if __name__ == "__main__":
+    LEO_payload = 21000
+    GTO_payload = 10500
+
+    rocket = Ariane()
+    rocket.Thrust_to_weight(LEO_payload)
+    rocket.structural_eff("srb")
 
     
 
