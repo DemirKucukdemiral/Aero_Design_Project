@@ -1,7 +1,7 @@
 
 ###===--------------------------------------------===###
 # Script:        ADP_P1Q1.py
-# Authors:       Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, Cameron Norrington 2873038N, Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
+# Authors:       Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, , Adam Burns 2914690B, Cameron Norrington 2873038N, Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
 # Created on:    2025-02-08
 # Last Modified: 2025-02-08
 # Description:   [Short description of the script]

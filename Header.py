@@ -25,7 +25,7 @@ def add_header_to_script():
     header = f'''
 ###===--------------------------------------------===###
 # Script:       {os.path.basename(script_path)}
-# Authors:       Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, Cameron Norrington 2873038N, Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
+# Authors:       Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, Cameron Norrington 2873038N, Adam Burns 2914690B, Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
 # Created on:   {current_date}
 # Last Modified: {current_date}
 # Description:  [Short description of the script]
