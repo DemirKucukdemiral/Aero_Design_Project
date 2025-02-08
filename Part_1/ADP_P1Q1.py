@@ -1,16 +1,15 @@
 
 ###===--------------------------------------------===###
-# Script:       ADP_P1Q1.py
+# Script:        ADP_P1Q1.py
 # Authors:       Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, Cameron Norrington 2873038N, Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
-# Created on:   2025-02-08
+# Created on:    2025-02-08
 # Last Modified: 2025-02-08
-# Description:  [Short description of the script]
-# Version:      1.0
+# Description:   [Short description of the script]
+# Version:       1.0
 ###===--------------------------------------------===###    
 
 
 from dataclasses import dataclass
-import numpy as np
 import math
 
 @dataclass
@@ -27,6 +26,9 @@ class Stage:
 class Ariane:
     def __init__(self):
         self.std_g = 9.81
+
+        self.mass_fairing = 2000
+        self.mass_adapter = 500
         
         self.core_stage = Stage(
             name="Core Stage",
@@ -67,9 +69,11 @@ class Ariane:
             "upper": self.upper_stage
         }
 
+        self.totalMass = (self.upper_stage.launch_mass+self.core_stage.launch_mass+self.srb.launch_mass + self.mass_adapter + self.mass_fairing)
+
     def Thrust_to_weight(self, mass_payload):
         self.mass_payload = mass_payload
-        TtoW = (self.srb.thrust_sl*2+self.core_stage.thrust_sl)/((self.upper_stage.launch_mass+self.core_stage.launch_mass+self.srb.launch_mass + self.mass_payload)*self.std_g)
+        TtoW = (self.srb.thrust_sl*2+self.core_stage.thrust_sl)/((self.totalMass+self.mass_payload)*self.std_g)
         if TtoW <= 1:
             print("Insufficient thrust")
             
@@ -86,20 +90,58 @@ class Ariane:
         print(f"The structural efficiency of {name} =", sigma)
         return sigma
     
-    def mass_ratio(self, name:str, mass_payload):
-        stage = self.stages[name]
 
-        mass_ratio = (stage.launch_mass+mass_payload)/(stage.structural_mass+mass_payload)
-        return mass_ratio
+
     
-    def velocity_increase(self, name:str, mass_payload):
-        stage = self.stages[name]
+    def velocity_increase_phase(self, phase: str, mass_payload: float):
 
-        mass_ratio = self.mass_ratio(name, mass_payload)
+        phase = phase.lower()
+        if phase not in ["srb", "core", "upper"]:
+            print("Invalid phase name. Use 'srb', 'core', or 'upper'.")
+            return 0.0
 
-        velocity = stage.Isp*self.std_g*math.log(mass_ratio)
+        if phase == "srb":
+            
+            M0 = (self.srb.launch_mass
+                + self.core_stage.launch_mass
+                + self.upper_stage.launch_mass
+                + mass_payload
+                + self.mass_adapter
+                + self.mass_fairing)
+            M_f = (self.core_stage.launch_mass
+                + self.upper_stage.launch_mass
+                + mass_payload
+                + self.mass_adapter
+                + self.mass_fairing)  
+            Isp = self.srb.Isp
 
-        return velocity
+        elif phase == "core":
+
+            M0 = (self.core_stage.launch_mass
+                + self.upper_stage.launch_mass
+                + mass_payload
+                + self.mass_adapter
+                + self.mass_fairing)  
+            M_f = (self.upper_stage.launch_mass
+                + mass_payload
+                + self.mass_adapter) 
+            Isp = self.core_stage.Isp
+
+        else: 
+           
+            M0 = (self.upper_stage.launch_mass
+                + mass_payload
+                + self.mass_adapter)  
+            M_f = (self.upper_stage.structural_mass
+                + mass_payload
+                + self.mass_adapter)
+            Isp = self.upper_stage.Isp
+
+   
+        dv = Isp * self.std_g * math.log(M0 / M_f)
+
+        print(f"[{phase.upper()}] Δv = {dv:.2f} m/s")
+        return dv
     
 
 
@@ -125,16 +167,13 @@ if __name__ == "__main__":
     rocket.structural_eff("srb")
 
     #Question 1, f) 
-    rocket.velocity_increase("core", LEO_payload)
-    rocket.velocity_increase("upper", LEO_payload)
-    rocket.velocity_increase("srb", LEO_payload)
+    rocket.velocity_increase_phase("srb", LEO_payload)
+    rocket.velocity_increase_phase("core", LEO_payload)
+    rocket.velocity_increase_phase("upper", LEO_payload)
 
     #Question 1, g)
-    rocket.velocity_increase("core", GTO_payload)
-    rocket.velocity_increase("upper", GTO_payload)
-    rocket.velocity_increase("srb", GTO_payload)
-
+    rocket.velocity_increase_phase("srb", GTO_payload)
+    rocket.velocity_increase_phase("core", GTO_payload)
+    rocket.velocity_increase_phase("upper", GTO_payload)
 
     
-
-
