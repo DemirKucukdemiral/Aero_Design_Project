@@ -95,7 +95,7 @@ class Ariane:
     def velocity_increase(self, name:str, mass_payload):
         stage = self.stages[name]
 
-        mass_ratio = self.mass_ration(name, mass_payload)
+        mass_ratio = self.mass_ratio(name, mass_payload)
 
         velocity = stage.Isp*self.std_g*math.log(mass_ratio)
 
@@ -108,8 +108,32 @@ if __name__ == "__main__":
     GTO_payload = 10500
 
     rocket = Ariane()
+
+    #Question 1, a)
     rocket.Thrust_to_weight(LEO_payload)
+
+    #Question 1, b)
+    rocket.Thrust_to_weight(GTO_payload)
+
+    #Question 1, c)
+    rocket.structural_eff("core")
+
+    #Question 1, d)
+    rocket.structural_eff("upper")
+
+    #Question 1, e) 
     rocket.structural_eff("srb")
+
+    #Question 1, f) 
+    rocket.velocity_increase("core", LEO_payload)
+    rocket.velocity_increase("upper", LEO_payload)
+    rocket.velocity_increase("srb", LEO_payload)
+
+    #Question 1, g)
+    rocket.velocity_increase("core", GTO_payload)
+    rocket.velocity_increase("upper", GTO_payload)
+    rocket.velocity_increase("srb", GTO_payload)
+
 
     
 
