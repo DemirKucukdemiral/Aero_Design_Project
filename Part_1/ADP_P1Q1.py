@@ -1,4 +1,3 @@
-
 ###===--------------------------------------------===###
 # Script:        ADP_P1Q1.py
 # Authors:       Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, , Adam Burns 2914690B, Cameron Norrington 2873038N, Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
@@ -26,9 +25,16 @@ class Stage:
 class Ariane:
     def __init__(self):
         self.std_g = 9.81
-
         self.mass_fairing = 2000
         self.mass_adapter = 500
+
+        self.fairing_jettisoned = False
+
+        """
+        Stages of the rocket:
+        Define the stages of the rocket. Each stage has a name, launch mass, structural mass, propellant mass, Isp, thrust in vacuum, thrust at sea level and burn time.
+        This data structure can be modified to include more stages if needed, just add it to the self.stages dictionary in the self.stages dictionary too.
+        """
         
         self.core_stage = Stage(
             name="Core Stage",
@@ -69,10 +75,54 @@ class Ariane:
             "upper": self.upper_stage
         }
 
-        self.totalMass = (self.upper_stage.launch_mass+self.core_stage.launch_mass+self.srb.launch_mass + self.mass_adapter + self.mass_fairing)
+        """
+        Phases of the rocket launch:
+        Define the phases of the rocket launch. Each phase has a name, active stages, drop stages, jettison fairing and Isp stage.
+        If the fairing is already jettisoned in a previous phase, it will not be jettisoned again so set jettison_fairing to False.
+        """
+        self.phases = [
+        {
+            "name": "srb",
+            "active_stages": ["srb", "core", "upper"],
+            "drop_stages": ["srb"],       
+            "jettison_fairing": False,
+            "Isp_stage": "srb",     
+            "active_engine": ["srb"]     
+        },
+        {
+            "name": "core",
+            "active_stages": ["core", "upper"],
+            "drop_stages": ["core"],      
+            "jettison_fairing": True,      
+            "Isp_stage": "core",
+            "active_engine": ["core"]
+        },
+        {
+            "name": "upper",
+            "active_stages": ["upper"],
+            "drop_stages": [],            
+            "jettison_fairing": False,     
+            "Isp_stage": "upper",
+            "active_engine": ["upper"]
+        }
+        ]
+        self.totalMass = self.__total_mass()
 
-    def Thrust_to_weight(self, mass_payload):
+    def __total_mass(self):
+        self.totalMass = 0
+        for stage in self.stages.values():
+            self.totalMass += stage.launch_mass
+        self.totalMass += self.mass_fairing + self.mass_adapter
+        return self.totalMass
+    
+
+    def Thrust_to_weight(self, mass_payload, phase : str):
         self.mass_payload = mass_payload
+        for p in self.phases:
+            if p["name"] == phase:
+                Isp_stage = p["Isp_stage"]
+        
+
         TtoW = (self.srb.thrust_sl*2+self.core_stage.thrust_sl)/((self.totalMass+self.mass_payload)*self.std_g)
         if TtoW <= 1:
             print("Insufficient thrust")
@@ -81,6 +131,7 @@ class Ariane:
 
         return TtoW 
     
+
     def structural_eff(self, name : str):
 
         stage = self.stages[name]
@@ -96,55 +147,44 @@ class Ariane:
     def velocity_increase_phase(self, phase: str, mass_payload: float):
 
         phase = phase.lower()
+
         if phase not in ["srb", "core", "upper"]:
-            print("Invalid phase name. Use 'srb', 'core', or 'upper'.")
-            return 0.0
+            raise ValueError("Invalid phase")
+        
+        for p in self.phases:
+            if p["name"] == phase:
+                phase_info = p
+                break
 
-        if phase == "srb":
-            
-            M0 = (self.srb.launch_mass
-                + self.core_stage.launch_mass
-                + self.upper_stage.launch_mass
-                + mass_payload
-                + self.mass_adapter
-                + self.mass_fairing)
-            M_f = (self.core_stage.launch_mass
-                + self.upper_stage.launch_mass
-                + mass_payload
-                + self.mass_adapter
-                + self.mass_fairing)  
-            Isp = self.srb.Isp
+        M0 = 0
 
-        elif phase == "core":
+        for stage_name in phase_info["active_stages"]:
+            M0 += self.stages[stage_name].launch_mass
+        if phase_info["jettison_fairing"]:
+            M0 -= self.mass_fairing
 
-            M0 = (self.core_stage.launch_mass
-                + self.upper_stage.launch_mass
-                + mass_payload
-                + self.mass_adapter
-                + self.mass_fairing)  
-            M_f = (self.upper_stage.launch_mass
-                + mass_payload
-                + self.mass_adapter) 
-            Isp = self.core_stage.Isp
+        M0 += mass_payload + self.mass_adapter
 
-        else: 
-           
-            M0 = (self.upper_stage.launch_mass
-                + mass_payload
-                + self.mass_adapter)  
-            M_f = (self.upper_stage.structural_mass
-                + mass_payload
-                + self.mass_adapter)
-            Isp = self.upper_stage.Isp
+        mf = 0
+        for stage_name in phase_info["drop_stages"]:
+            mf += self.stages[stage_name].launch_mass
+
+        if phase_info["jettison_fairing"] and not self.fairing_jettisoned:
+            mf -= self.mass_fairing
+            self.fairing_jettisoned = True
+
+
+        M_f = M0 - mf
+
+        Isp = self.stages[phase_info["Isp_stage"]].Isp
+
 
    
         dv = Isp * self.std_g * math.log(M0 / M_f)
 
-        print(f"[{phase.upper()}] Δv = {dv:.2f} m/s")
+        print(f"[{phase.upper()}] delta v = {dv} m/s")
         return dv
     
-
-
 if __name__ == "__main__":
     LEO_payload = 21000
     GTO_payload = 10500
@@ -152,10 +192,10 @@ if __name__ == "__main__":
     rocket = Ariane()
 
     #Question 1, a)
-    rocket.Thrust_to_weight(LEO_payload)
+    rocket.Thrust_to_weight(LEO_payload, "srb")
 
     #Question 1, b)
-    rocket.Thrust_to_weight(GTO_payload)
+    rocket.Thrust_to_weight(GTO_payload, "core")
 
     #Question 1, c)
     rocket.structural_eff("core")
