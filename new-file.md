@@ -111,6 +111,17 @@ Now when you are comfortable with your part, you can merge onto the dev. Start b
     git merge name_new_branch
     git push origin main
 
+## Issues, Errors and How to Fix Them
+
+### "Git Not Recognised..."
+
+This just means you dont have git installed, just go and donload Git, (not github). When you do go onto terminal and do:
+
+    git --version
+
+This should give something like:
+
+    version 12.x.x
 
 
 
