@@ -70,7 +70,7 @@ For simplicity we will use 3 branches:
 
 main will be the final step and so should never conflicts. Dev will be the intermediate step where people works are merged into so that if there are any conflicts we sort them at this stage before merging to main.  Lastly the individual branches are what people work on they will create this themselves and when they are done merge inti the dev branch.
 
-### Branching
+## Branching
 
 At any director we can see the existing branches using the command:
 
@@ -89,6 +89,29 @@ Where the (*) indicates the current branch. To switch to a new branch you could 
 Or,
 
     git switch branch_name
+
+### Creating a Branch and Merging
+
+---
+
+To start working on your part please first make a branch and do everything from there. Ideally make the the branch from the dev branch.
+
+    git switch dev
+    git checkout -b name_new_branch
+
+When you make your edits and push the stuff onto the new branch. 
+
+    git add .
+    git commit -m "commit message"
+    git push 
+
+Now when you are comfortable with your part, you can merge onto the dev. Start by switching to dev.
+
+    git checkout dev
+    git merge name_new_branch
+    git push origin main
+
+
 
 
 
