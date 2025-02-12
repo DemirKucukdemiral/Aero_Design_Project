@@ -22,7 +22,7 @@ sigma2 = (391/4306) #Stage 2
 print ("Structural Efficiency of Stage 2:" , round (sigma2, 4))
 
 sigma3 = (102.1/872.3) #Stage 3 
-print ("Structural Efficiency of Stage 2:" , round (sigma3, 4))
+print ("Structural Efficiency of Stage 3:" , round (sigma3, 4))
 
 ###Payload Fractions:
 
