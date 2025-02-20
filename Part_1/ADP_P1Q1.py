@@ -186,6 +186,13 @@ class Ariane:
             drop_mass = dropped_stg.launch_mass * dropped_stg.number
             Mf -= drop_mass
 
+        if phase_info["name"] == "srb":
+            Mf -= self.stages["core"].thrust_sl * self.stages["srb"].burn_time / (self.std_g * self.stages["core"].Isp)
+            
+
+        if phase_info["name"] == "core":
+            M0 -= self.stages["core"].thrust_sl * self.stages["srb"].burn_time / (self.std_g * self.stages["core"].Isp)
+
         # Also jettison fairing if indicated (and if not yet jettisoned)
         if phase_info["jettison_fairing"] and not self.fairing_jettisoned:
             Mf -= self.mass_fairing
