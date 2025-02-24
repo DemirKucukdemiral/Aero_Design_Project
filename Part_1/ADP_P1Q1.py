@@ -1,6 +1,6 @@
 ###===--------------------------------------------===###
 # Script:        ADP_P1Q1.py
-# Authors:       [Your Team]
+# Authors:       Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, Cameron Norrington 2873038N, Adam Burns 2914690B, Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
 # Created on:    2025-02-08
 # Last Modified: 2025-02-08
 # Description:   Demonstration of multi-stage rocket equation
@@ -13,7 +13,7 @@ import math
 @dataclass
 class Stage:
     name: str
-    launch_mass: float      # (wet mass) stage structural + propellant
+    launch_mass: float      
     structural_mass: float  
     propellant_mass: float  
     Isp: float              
@@ -30,7 +30,6 @@ class Ariane:
 
         self.fairing_jettisoned = False
 
-        # Define each stage data
         self.core_stage = Stage(
             name="Core Stage",
             launch_mass=184700,  
@@ -73,7 +72,7 @@ class Ariane:
             "upper": self.upper_stage
         }
 
-        # Define the launch phases (assuming simple serial drop logic)
+        # Define the launch phases 
         self.phases = [
             {
                 "name": "srb",
@@ -104,35 +103,27 @@ class Ariane:
         self.totalMass = self.__total_mass()
 
     def __total_mass(self):
-        """
-        Total rocket mass on the pad (all stages + fairing + adapter).
-        """
+
         total = sum(stage.launch_mass * stage.number for stage in self.stages.values())
         total += self.mass_fairing + self.mass_adapter
         return total
     
     def Thrust_to_weight(self, mass_payload, phase: str):
-        """
-        T/W ratio at sea level for the given phase, summing the SL thrust
-        of each engine active in that phase.
-        """
+       
         phase = phase.lower()
-        # Find the relevant phase dictionary
+        
         for p in self.phases:
             if p["name"] == phase:
                 phase_info = p
                 break
 
-        # Sum the sea-level thrust of all active engines in that phase
+
         total_thrust_sl = 0
         for engine_name in phase_info["active_engine"]:
             stg = self.stages[engine_name]
             total_thrust_sl += stg.thrust_sl * stg.number
 
-        # Weight = (rocket mass + payload) * g
-        # We'll assume rocket mass = self.totalMass for T/W at liftoff,
-        # or if you want a more exact approach, re-compute only the "active" mass. 
-        # For demonstration, we use totalMass + payload:
+        
         weight = (self.totalMass + mass_payload) * self.std_g
         ttw = total_thrust_sl / weight
         
@@ -140,46 +131,36 @@ class Ariane:
         return ttw
 
     def structural_eff(self, name: str):
-        """
-        Simple ratio: structural_mass / launch_mass (wet mass).
-        """
+        
         stage = self.stages[name]
         sigma = stage.structural_mass / stage.launch_mass
         print(f"The structural efficiency of {name} = {sigma:.4f}")
         return sigma
 
     def velocity_increase_phase(self, phase: str, mass_payload: float):
-        """
-        Computes delta-V for the given phase using:
-          Δv = Isp * g * ln(M0 / Mf)
-        Where:
-          - M0 = sum of all active stages + payload + adapter + (fairing if not yet dropped)
-          - Mf = M0 minus (drop_stages + fairing if jettisoned in this phase)
-        """
+        
         phase = phase.lower()
         if phase not in ["srb", "core", "upper"]:
             raise ValueError("Invalid phase name.")
 
-        # Find phase info
         for p in self.phases:
             if p["name"] == phase:
                 phase_info = p
                 break
 
-        # 1) Compute M0
+   
         M0 = 0.0
         for stg_name in phase_info["active_stages"]:
             stg = self.stages[stg_name]
             M0 += stg.launch_mass * stg.number
 
-        # Add payload + adapter
         M0 += mass_payload + self.mass_adapter
 
-        # If we have NOT jettisoned fairing yet, include it in M0
+    
         if not self.fairing_jettisoned:
             M0 += self.mass_fairing
 
-        # 2) Compute Mf by removing the mass of dropped stages
+
         Mf = M0
         for dropped_stg_name in phase_info["drop_stages"]:
             dropped_stg = self.stages[dropped_stg_name]
@@ -193,15 +174,13 @@ class Ariane:
         if phase_info["name"] == "core":
             M0 -= self.stages["core"].thrust_sl * self.stages["srb"].burn_time / (self.std_g * self.stages["core"].Isp)
 
-        # Also jettison fairing if indicated (and if not yet jettisoned)
+
         if phase_info["jettison_fairing"] and not self.fairing_jettisoned:
             Mf -= self.mass_fairing
             self.fairing_jettisoned = True
 
-        # 3) Isp for this phase
         Isp = self.stages[phase_info["Isp_stage"]].Isp
 
-        # 4) Rocket Equation
 
         if phase == "upper":
             Mf -= self.stages["upper"].propellant_mass
