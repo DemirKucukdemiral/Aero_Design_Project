@@ -148,9 +148,6 @@ class Ariane:
                 phase_info = p
                 break
 
-        
-        
-   
         M0 = 0.0
         for stg_name in phase_info["active_stages"]:
             stg = self.stages[stg_name]

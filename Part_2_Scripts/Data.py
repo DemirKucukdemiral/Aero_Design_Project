@@ -9,6 +9,7 @@ class Stage:
     thrust_vac: float      
     thrust_sl: float        
     burn_time: float
+    delta_v: float
     number: int
 
 class Launcher_Data:
@@ -28,6 +29,7 @@ class Launcher_Data:
             thrust_vac=1_390_000,     
             thrust_sl=960_000,        
             burn_time=540,
+            delta_v=10000,
             number=1
         )
 
@@ -38,6 +40,7 @@ class Launcher_Data:
             thrust_vac=6_470_000, 
             thrust_sl=6_470_000,    
             burn_time=130,
+            delta_v=10000,
             number=4
         )
 
