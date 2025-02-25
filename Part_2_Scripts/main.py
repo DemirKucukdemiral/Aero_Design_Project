@@ -1,6 +1,8 @@
 import numpy as np
 from dataclasses import dataclass
 
+
+
 @dataclass
 class Stage:
     name: str
@@ -142,7 +144,8 @@ class Launcher:
         tw_ratio = total_thrust_sl / (self.total_mass * self.data.gravity)
         return tw_ratio
     
-    def final_payload_mass(self, structural_efficiency, Ve, verbose=True):
+    def final_payload_mass(self, structural_efficiency, verbose=True):
+        Ve = self.Ve
         alpha = structural_efficiency / (1 - structural_efficiency)
         current_m0 = self.total_mass  # total rocket mass at liftoff
 
@@ -175,7 +178,7 @@ class Launcher:
         current_eff = self.structural_efficiency
         
         while current_eff > 0:
-            payload = self.final_payload_mass(Ve=self.Ve, structural_efficiency=current_eff, verbose=False)
+            payload = self.final_payload_mass(structural_efficiency=current_eff, verbose=False)
             if payload >= target_payload:
                 print(f"Found structural efficiency ~ {current_eff:.2f} => payload ~ {payload:.1f} kg")
                 return
