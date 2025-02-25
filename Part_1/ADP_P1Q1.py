@@ -148,6 +148,8 @@ class Ariane:
                 phase_info = p
                 break
 
+        
+        
    
         M0 = 0.0
         for stg_name in phase_info["active_stages"]:
@@ -164,12 +166,15 @@ class Ariane:
         Mf = M0
         for dropped_stg_name in phase_info["drop_stages"]:
             dropped_stg = self.stages[dropped_stg_name]
-            drop_mass = dropped_stg.launch_mass * dropped_stg.number
+            drop_mass = dropped_stg.propellant_mass * dropped_stg.number
             Mf -= drop_mass
 
-        if phase_info["name"] == "srb":
-            Mf -= self.stages["core"].thrust_sl * self.stages["srb"].burn_time / (self.std_g * self.stages["core"].Isp)
-            
+        for stg_name in phase_info["active_engine"]:
+            if stg_name in phase_info["drop_stages"]:
+                continue
+            else:
+                Mf -= self.stages[stg_name].thrust_sl * self.stages[stg_name].burn_time / (self.std_g * self.stages[stg_name].Isp)
+
 
         if phase_info["name"] == "core":
             M0 -= self.stages["core"].thrust_sl * self.stages["srb"].burn_time / (self.std_g * self.stages["core"].Isp)
@@ -179,7 +184,10 @@ class Ariane:
             Mf -= self.mass_fairing
             self.fairing_jettisoned = True
 
-        Isp = self.stages[phase_info["Isp_stage"]].Isp
+        Isp = 0.0
+        for stg_name in phase_info["active_engine"]:
+            Isp += self.stages[stg_name].Isp * self.stages[stg_name].number
+       
 
 
         if phase == "upper":
