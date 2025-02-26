@@ -19,21 +19,17 @@ class Launcher_Data:
         self.gravity = 9.81
         
         # Example masses in kg
-        self.mass_payload_1 = 21100  # might be the main payload
-        self.mass_payload_2 = 10010  # maybe a secondary payload
-        self.mass_fairing = 1000
-        self.mass_adapter = 1000
+        self.mass_payload_1 = 21100  
+        self.mass_payload_2 = 10010 
 
-        # --- Define Stages ---
-        # Stage 1: Booster (LPB)
         self.lpb = Stage(
             name="Liquid Propellant Booster",
-            launch_mass=200000 * 4,   # e.g. 5 segments combined
-            Isp=282,                  # s
-            thrust_vac=900000 * 4,    # total thrust in vacuum
-            thrust_sl=900000 * 4,     # sea-level thrust
+            launch_mass=100000 * 4,   
+            Isp=363,                  
+            thrust_vac=2279000 * 4,   
+            thrust_sl=2279000 * 4,    
             burn_time=130,
-            delta_v=3000,            # e.g. 3 km/s for the booster
+            delta_v=3000,            
             number=1
         )
 
@@ -45,30 +41,29 @@ class Launcher_Data:
             thrust_vac=900000, 
             thrust_sl=900000,  
             burn_time=540,       
-            delta_v=4000,       # e.g. 4 km/s to reach LEO
+            delta_v=4000,       
             number=1
         )
 
-        # Stage 3: Upper
         self.upper_stage = Stage(
             name="Upper Stage",
-            launch_mass=30000,    # total mass for the upper stage
-            Isp=320,              # better vacuum performance
-            thrust_vac=200000,    # smaller engine, purely vacuum
-            thrust_sl=0,          # not used at sea level
+            launch_mass=30000,    
+            Isp=410,              
+            thrust_vac=66700,    
+            thrust_sl=0,          
             burn_time=500,        
-            delta_v=4000,         # e.g. 4 km/s from LEO to GTO
+            delta_v=4000,         
             number=1
         )
 
-        # Bundle them in a dictionary for lookups
+
         self.stages = {
             "lpb":   self.lpb,
             "core":  self.core_stage,
             "upper": self.upper_stage
         }
 
-        # --- Compute total_mass ---
+       
         self.total_mass = (
             self.mass_payload_1
             + self.mass_payload_2
@@ -77,28 +72,28 @@ class Launcher_Data:
             + self.upper_stage.launch_mass * self.upper_stage.number
         )
 
-        # --- Define phases (3-stage flight) ---
+        
         self.phases = [
             {
                 "name": "lpb",
                 "active_stages": ["lpb", "core", "upper"],
                 "drop_stages":   ["lpb"],
                 "jettison_fairing": False,
-                "active_engine": ["lpb"]  # only boosters fire here
+                "active_engine": ["lpb"]  
             },
             {
                 "name": "core",
                 "active_stages": ["core", "upper"],
                 "drop_stages":   ["core"],
                 "jettison_fairing": True, 
-                "active_engine": ["core"]  # only core fires
+                "active_engine": ["core"]  
             },
             {
                 "name": "upper",
                 "active_stages": ["upper"],
                 "drop_stages":   ["upper"],
                 "jettison_fairing": False,
-                "active_engine": ["upper"]  # final stage to GTO
+                "active_engine": ["upper"]  
             }
         ]
 class Launcher:
@@ -109,23 +104,15 @@ class Launcher:
         self.time = 0
         self.total_mass = self.data.total_mass
         
-        # A default structural efficiency, e.g. 7% 
         self.structural_efficiency = 0.07
         
-        # For 2-stage rocket
         self.number_of_stages = 3
-        
-        # Effective exhaust velocity for the rocket equation 
-        self.Ve = self.data.lpb.Isp*9.81 # (m/s), example figure
 
-        # For convenience, store references
-        self.phases = self.data.phases      # from the data container
-        self.stages = self.data.stages      # dictionary of Stage objects
+        self.phases = self.data.phases      
+        self.stages = self.data.stages      
 
     def Thrust_to_weight(self, phase: str) -> float:
-        """
-        Computes the thrust-to-weight ratio at sea level for a given phase name.
-        """
+  
         phase_info = None
         for p in self.phases:
             if p["name"] == phase:
@@ -134,25 +121,23 @@ class Launcher:
         if phase_info is None:
             raise ValueError(f"Invalid phase '{phase}' in Thrust_to_weight().")
 
-        # Sum thrust_sl from all active engines
         total_thrust_sl = 0.0
         for engine_name in phase_info["active_engine"]:
             stage_obj = self.stages[engine_name]
             total_thrust_sl += stage_obj.thrust_sl * stage_obj.number
 
-        # Weight = total mass * g
         tw_ratio = total_thrust_sl / (self.total_mass * self.data.gravity)
         return tw_ratio
     
     def final_payload_mass(self, structural_efficiency, verbose=True):
-        Ve = self.Ve
+        Ve = 0.0
         alpha = structural_efficiency / (1 - structural_efficiency)
-        current_m0 = self.total_mass  # total rocket mass at liftoff
+        current_m0 = self.total_mass 
 
         for stage_key in ["lpb", "core", "upper"]:
             stg = self.stages[stage_key]
+            Ve = stg.Isp * self.data.gravity
 
-            # 1. Rocket eq: M0/Mf = exp(DeltaV / Ve)
             K = np.exp(stg.delta_v / Ve)
             m_after_burn = current_m0 / K
             m_propellant = current_m0 - m_after_burn
@@ -162,7 +147,6 @@ class Launcher:
                 print(f"Stage {stage_key} => dv={stg.delta_v:.1f} m/s | "
                     f"m_prop={m_propellant:.1f} kg | m_struct={m_structure:.1f} kg")
 
-            # 2. Remove the structure for this stage
             current_m0 = m_after_burn - m_structure
 
             if stage_key == "core":
@@ -200,7 +184,7 @@ if __name__ == "__main__":
     print(f"T/W ratio during Core phase: {tw_core:.3f}")
     
     # 3) Print out final payload mass with the default structural efficiency
-    leftover = launcher.final_payload_mass(launcher.structural_efficiency, launcher.Ve, verbose=True)
+    leftover = launcher.final_payload_mass(launcher.structural_efficiency, verbose=True)
     print(f"Final payload mass (default efficiency={launcher.structural_efficiency:.2f}) ~ {leftover:.1f} kg")
 
     # 4) Attempt to find a structural efficiency that yields 1000 kg leftover
