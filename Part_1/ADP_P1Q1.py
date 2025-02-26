@@ -7,222 +7,76 @@
 # Version:       1.0
 ###===--------------------------------------------===###    
 
-from dataclasses import dataclass
+#QUESTION 1: 
+
 import math
 
-@dataclass
-class Stage:
-    name: str
-    launch_mass: float      
-    structural_mass: float  
-    propellant_mass: float  
-    Isp: float              
-    thrust_vac: float      
-    thrust_sl: float        
-    burn_time: float
-    number: int       
-    
-class Ariane:
-    def __init__(self):
-        self.std_g = 9.81
-        self.mass_fairing = 2000
-        self.mass_adapter = 500
+#Launch masses:
+launch_mass_LEO =  184700 + (2*268000) + 19440 + 500 + 2000 +21000 
+launch_mass_GTO =  184700 + (2*268000) + 19440 + 500 + 2000 + 10500 
 
-        self.fairing_jettisoned = False
+launch_thrust = 960000 + (2*6470000) 
 
-        self.core_stage = Stage(
-            name="Core Stage",
-            launch_mass=184700,  
-            structural_mass=14700,
-            propellant_mass=170000,
-            Isp=432,          
-            thrust_vac=1_390_000,     
-            thrust_sl=960_000,        
-            burn_time=540,
-            number=1        
-        )
+#Thrust to weight ratios
+thrust_to_weight_LEO = ((launch_thrust)/((launch_mass_LEO)*9.81)) #Thrust to weight 
+thrust_to_weight_GTO = ((launch_thrust)/((launch_mass_GTO)*9.81))
 
-        self.srb = Stage(
-            name="Solid Rocket Booster",
-            launch_mass=268000,
-            structural_mass=30200,
-            propellant_mass=237800,
-            Isp=274.5,
-            thrust_vac=6_470_000, 
-            thrust_sl=6_470_000,    
-            burn_time=130,
-            number=2
-        )
+#Structural efficiencies:
+sigma_core =14700/184700 
+sigma_upper = 4540/19440 
+sigma_srb = 30200 / 268000 
 
-        self.upper_stage = Stage(
-            name="Upper Stage",
-            launch_mass=19_440,
-            structural_mass=4_540,
-            propellant_mass=14_900,
-            Isp=446,
-            thrust_vac=62_700,
-            thrust_sl=0,
-            burn_time=945,
-            number=1
-        )
+#Mass flow rates:
+mass_flow_srb = (2*237800)/130
+mass_flow_core = 170000 /540 
 
-        self.stages = {
-            "core":  self.core_stage,
-            "srb":   self.srb,
-            "upper": self.upper_stage
-        }
+v_1 = (launch_thrust)/((mass_flow_core)+(mass_flow_srb)) #Exhuast gas vel for 1st stage
+ 
+prop_1 = (mass_flow_core + mass_flow_srb)* 130 #Propellant used in 1st stage 
+deltaV1_LEO = v_1 * math.log(launch_mass_LEO/(launch_mass_LEO - prop_1)) #Speed inc from LEO 1st stage:
 
-        # Define the launch phases 
-        self.phases = [
-            {
-                "name": "srb",
-                "active_stages": ["srb", "core", "upper"],  # total mass at start
-                "drop_stages":   ["srb"],                   # mass dropped at end
-                "jettison_fairing": False,
-                "Isp_stage": "srb",     
-                "active_engine": ["srb", "core"]
-            },
-            {
-                "name": "core",
-                "active_stages": ["core", "upper"],         # total mass at start
-                "drop_stages":   ["core"],                  # mass dropped at end
-                "jettison_fairing": True,                   # fairing jettison
-                "Isp_stage": "core",
-                "active_engine": ["core"]
-            },
-            {
-                "name": "upper",
-                "active_stages": ["upper"],
-                "drop_stages":   [],
-                "jettison_fairing": False,
-                "Isp_stage": "upper",
-                "active_engine": ["upper"]
-            }
-        ]
+v_2 = 432*9.81 #Exhaust gas vel for 2nd stage
 
-        self.totalMass = self.__total_mass()
+mass_2_LEO = 184700 - (mass_flow_core*130) +19440+ 2000+ 500 + 21000 #Initial mass for LEO 2nd stage 
+mass_2B_LEO = 14700 + 19440 + 2000 +500 +21000 #Mass at LEO 2nd stage burnout
 
-    def __total_mass(self):
+deltaV2_LEO = v_2 * math.log(mass_2_LEO/mass_2B_LEO) #Speed inc from LEO 2nd stage
+v_3 = 446*9.81 #Exhaust gas vel for 3rd stage
 
-        total = sum(stage.launch_mass * stage.number for stage in self.stages.values())
-        total += self.mass_fairing + self.mass_adapter
-        return total
-    
-    def Thrust_to_weight(self, mass_payload, phase: str):
-       
-        phase = phase.lower()
-        
-        for p in self.phases:
-            if p["name"] == phase:
-                phase_info = p
-                break
+mass_3_LEO = 19440 + 500 + 21000 #Initial mass for LEO 3rd stage
+mass_3B_LEO = 4540 +500 +21000 #Mass at LEO 3rd stage burnout
+
+deltaV3_LEO = v_3 * math.log(mass_3_LEO/ mass_3B_LEO) #Speed inc from LEO 3rd stage 
+total_deltaV_LEO = deltaV1_LEO + deltaV2_LEO + deltaV3_LEO #Total speed increase for LEO all stages
+
+deltaV1_GTO = v_1 * math.log(launch_mass_GTO/(launch_mass_GTO - prop_1)) #Spped inc from GTO 1st stage
+mass_2_GTO = 184700 - (mass_flow_core*130) +19440+ 2000+ 500 + 10500 #Initial mass for GTO 2nd stage
+
+mass_2B_GTO = 14700 + 19440 + 2000 + 500 + 10500 #Mass at GTO 2nd stage burnout
+
+deltaV2_GTO = v_2 * math.log(mass_2_GTO/mass_2B_GTO) #Speed inc from GTO 2nd stage
+
+mass_3_GTO = 19440 + 500 + 10500 #Initial mass for GTO 3rd stage
+mass_3B_GTO = 4540 + 500 + 10500 #Mass at GTO 3rd stage burnout
+
+deltaV3_GTO = v_3 * math.log(mass_3_GTO/mass_3B_GTO) #Speed inc from GTO 3rd stage
+
+total_deltaV_GTO = deltaV1_GTO + deltaV2_GTO + deltaV3_GTO #Total speed increase for GTO all stages
 
 
-        total_thrust_sl = 0
-        for engine_name in phase_info["active_engine"]:
-            stg = self.stages[engine_name]
-            total_thrust_sl += stg.thrust_sl * stg.number
+print ("Q1a.Thrust-weight ratio at lift-off for max LEO: ",thrust_to_weight_LEO)
+print ("Q1b.Thrust-weight ratio at lift-off for max GTO: ",thrust_to_weight_GTO)
 
-        
-        weight = (self.totalMass + mass_payload) * self.std_g
-        ttw = total_thrust_sl / weight
-        
-        print(f"[{phase.upper()}] Thrust-to-weight ratio: {ttw:.3f}")
-        return ttw
+print ("Q1c.Structural efficiency of core stage: ",sigma_core)
+print ("Q1d.Structural efficiency of upper stage: ", sigma_upper)
+print ("Q1e.Structural efficiency of SRBs: ", sigma_srb)
 
-    def structural_eff(self, name: str):
-        
-        stage = self.stages[name]
-        sigma = stage.structural_mass / stage.launch_mass
-        print(f"The structural efficiency of {name} = {sigma:.4f}")
-        return sigma
+print ("Q1f. speed inc for 1st stage LEO: ", deltaV1_LEO, "m/s")
+print ("speed inc for 2nd stage LEO: ", deltaV2_LEO, "m/s")
+print ("speed inc for 3rd stage LEO: ", deltaV3_LEO, "m/s")
+print ("total speed inc LEO: ", total_deltaV_LEO, "m/s")
 
-    def velocity_increase_phase(self, phase: str, mass_payload: float):
-        
-        phase = phase.lower()
-        if phase not in ["srb", "core", "upper"]:
-            raise ValueError("Invalid phase name.")
-
-        for p in self.phases:
-            if p["name"] == phase:
-                phase_info = p
-                break
-
-        M0 = 0.0
-        for stg_name in phase_info["active_stages"]:
-            stg = self.stages[stg_name]
-            M0 += stg.launch_mass * stg.number
-
-        M0 += mass_payload + self.mass_adapter
-
-    
-        if not self.fairing_jettisoned:
-            M0 += self.mass_fairing
-
-
-        Mf = M0
-        for dropped_stg_name in phase_info["drop_stages"]:
-            dropped_stg = self.stages[dropped_stg_name]
-            drop_mass = dropped_stg.propellant_mass * dropped_stg.number
-            Mf -= drop_mass
-
-        for stg_name in phase_info["active_engine"]:
-            if stg_name in phase_info["drop_stages"]:
-                continue
-            else:
-                Mf -= self.stages[stg_name].thrust_sl * self.stages[stg_name].burn_time / (self.std_g * self.stages[stg_name].Isp)
-
-
-        if phase_info["name"] == "core":
-            M0 -= self.stages["core"].thrust_sl * self.stages["srb"].burn_time / (self.std_g * self.stages["core"].Isp)
-
-
-        if phase_info["jettison_fairing"] and not self.fairing_jettisoned:
-            Mf -= self.mass_fairing
-            self.fairing_jettisoned = True
-
-        Isp = 0.0
-        for stg_name in phase_info["active_engine"]:
-            Isp += self.stages[stg_name].Isp * self.stages[stg_name].number
-       
-
-
-        if phase == "upper":
-            Mf -= self.stages["upper"].propellant_mass
-
-        dv = Isp * self.std_g * math.log(M0 / Mf)
-
-        print(f"[{phase.upper()}] delta-v = {dv:,.1f} m/s   (M0={M0:,.1f} kg, Mf={Mf:,.1f} kg)")
-        return dv
-
-
-if __name__ == "__main__":
-    LEO_payload = 21000
-    GTO_payload = 10500
-
-    rocket = Ariane()
-
-    # Question 1, a) T/W with LEO payload, phase SRB
-    rocket.Thrust_to_weight(LEO_payload, "srb")
-
-    # Question 1, b) T/W with GTO payload, phase SRB
-    rocket.Thrust_to_weight(GTO_payload, "srb")
-
-    # Question 1, c) Structural efficiency of core
-    rocket.structural_eff("core")
-
-    # Question 1, d) Structural efficiency of upper
-    rocket.structural_eff("upper")
-
-    # Question 1, e) Structural efficiency of srb
-    rocket.structural_eff("srb")
-
-    # Question 1, f) Delta-v for each phase to LEO
-    rocket.velocity_increase_phase("srb", LEO_payload)
-    rocket.velocity_increase_phase("core", LEO_payload)
-    rocket.velocity_increase_phase("upper", LEO_payload)
-
-    # Question 1, g) Delta-v for each phase to GTO
-    rocket.velocity_increase_phase("srb", GTO_payload)
-    rocket.velocity_increase_phase("core", GTO_payload)
-    rocket.velocity_increase_phase("upper", GTO_payload)
+print ("Q1g. speed inc for 1st stage GTO: ", deltaV1_GTO, "m/s")
+print ("speed inc for 2nd stage GTO: ", deltaV2_GTO, "m/s")
+print ("speed inc for 3rd stage GTO: ", deltaV3_GTO, "m/s")
+print ("total speed inc GTO: ", total_deltaV_GTO, "m/s")
