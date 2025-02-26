@@ -178,10 +178,6 @@ if __name__ == "__main__":
     # 1) Thrust-to-weight in first (lpb) phase
     tw_lpb = launcher.Thrust_to_weight("lpb")
     print(f"T/W ratio during LPB phase: {tw_lpb:.3f}")
-
-    # 2) Thrust-to-weight in second (core) phase
-    tw_core = launcher.Thrust_to_weight("core")
-    print(f"T/W ratio during Core phase: {tw_core:.3f}")
     
     # 3) Print out final payload mass with the default structural efficiency
     leftover = launcher.final_payload_mass(launcher.structural_efficiency, verbose=True)
