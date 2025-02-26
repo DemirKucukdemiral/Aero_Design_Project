@@ -104,7 +104,7 @@ class Launcher:
         self.time = 0
         self.total_mass = self.data.total_mass
         
-        self.structural_efficiency = 0.07
+        self.structural_efficiency = 0.06
         
         self.number_of_stages = 3
 
