@@ -13,9 +13,9 @@ import numpy as np
 class Launcher:
     def __init__(self, structural_efficiency=0.07, number_of_stages=2):
 
-        self.Ve = 3400          # m/s
-        self.total_mass = 200000  # kg 
-        self.delta_v = 10000      # m/s 
+        self.Ve = 3400          
+        self.total_mass = 200000  
+        self.delta_v = 10000      
         self.structural_efficiency = structural_efficiency
         self.number_of_stages = number_of_stages
 

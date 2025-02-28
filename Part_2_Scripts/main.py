@@ -1,6 +1,21 @@
+
+###===--------------------------------------------===###
+# Script:       main.py
+# Authors:       Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, Cameron Norrington 2873038N, Adam Burns 2914690B, Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
+# Created on:   2025-02-28
+# Last Modified: 2025-02-28
+# Description:  optimal structural efficiency solver for a concpet launcher
+# Version:      1.0
+###===--------------------------------------------===###    
+
+
 import numpy as np
 from dataclasses import dataclass
-
+"""
+This script uses a dataclass to store the information about the stages of a launcher.
+The Launcher class uses this data to calculate the thrust-to-weight ratio and the final payload mass
+given some initial totoal mass, engine data, phase information and required final velocity.
+"""
 
 
 @dataclass
@@ -16,6 +31,10 @@ class Stage:
 
 class Launcher_Data:
     def __init__(self):
+        """
+        Initi function to declare or parameters, phases and stage informations
+        also declares all engine informations.
+        """
         self.gravity = 9.81
         
         self.mass_payload_1 = 21100  
@@ -109,8 +128,8 @@ class Launcher:
         self.phases = self.data.phases      
         self.stages = self.data.stages      
 
-    def Thrust_to_weight(self, phase: str) -> float:
-  
+    def Thrust_to_weight(self, phase: str) -> float: #thrust to weight calculation (of the booster phase) using given parameyters
+        
         phase_info = None
         for p in self.phases:
             if p["name"] == phase:
@@ -127,6 +146,7 @@ class Launcher:
         tw_ratio = total_thrust_sl / (self.total_mass * self.data.gravity)
         return tw_ratio
     
+    #Final mass calculation using the given structural efficiency
     def final_payload_mass(self, structural_efficiency, verbose=True):
         Ve = 0.0
         alpha = structural_efficiency / (1 - structural_efficiency)
@@ -155,7 +175,7 @@ class Launcher:
 
         return current_m0
     
-    def optimal_efficiency(self, target_payload: float):
+    def optimal_efficiency(self, target_payload: float): #searching for the optimal structural efficiency until desired final mass is reached
 
         current_eff = self.structural_efficiency
         

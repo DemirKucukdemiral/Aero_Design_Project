@@ -3,7 +3,7 @@
 # Authors:       Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, Cameron Norrington 2873038N, Adam Burns 2914690B, Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
 # Created on:    2025-02-08
 # Last Modified: 2025-02-08
-# Description:   Demonstration of multi-stage rocket equation
+# Description:   Analysis of the structural efficiency of a Ariane 5
 # Version:       1.0
 ###===--------------------------------------------===###    
 

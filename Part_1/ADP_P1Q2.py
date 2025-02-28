@@ -4,7 +4,7 @@
 # Authors:       Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, Cameron Norrington 2873038N, Adam Burns 2914690B, Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
 # Created on:   2025-02-12
 # Last Modified: 2025-02-12
-# Description:  [Short description of the script]
+# Description:  Analysis of the Peagasus XL Launch System
 # Version:      1.0
 ###===--------------------------------------------===###    
 
@@ -12,8 +12,6 @@
 #QUESTION 2: Analysis of the Peagasus XL Launch System
 
 import math
-
-###Structural Efficiencies:
 
 sigma1 = (1369+1000) / (16383+1000) #Stage 1 
 print ("Structural Efficiency of Stage 1:" , round (sigma1, 4))
