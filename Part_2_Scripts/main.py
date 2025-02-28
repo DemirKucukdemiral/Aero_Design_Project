@@ -18,7 +18,6 @@ class Launcher_Data:
     def __init__(self):
         self.gravity = 9.81
         
-        # Example masses in kg
         self.mass_payload_1 = 21100  
         self.mass_payload_2 = 10010 
 
@@ -33,7 +32,6 @@ class Launcher_Data:
             number=1
         )
 
-        # Stage 2: Core
         self.core_stage = Stage(
             name="Core Stage",
             launch_mass=200000,   
@@ -172,17 +170,13 @@ class Launcher:
             
 
 if __name__ == "__main__":
-    # Example usage
     launcher = Launcher()
     
-    # 1) Thrust-to-weight in first (lpb) phase
     tw_lpb = launcher.Thrust_to_weight("lpb")
     print(f"T/W ratio during LPB phase: {tw_lpb:.3f}")
     
-    # 3) Print out final payload mass with the default structural efficiency
     leftover = launcher.final_payload_mass(launcher.structural_efficiency, verbose=True)
     print(f"Final payload mass (default efficiency={launcher.structural_efficiency:.2f}) ~ {leftover:.1f} kg")
 
-    # 4) Attempt to find a structural efficiency that yields 1000 kg leftover
     print("\nSearching for an optimal structural efficiency to get 1000 kg payload...")
     launcher.optimal_efficiency(10500)
