@@ -73,8 +73,7 @@ class Launcher_Data:
             thrust_sl=0,          
             burn_time=500,        
             delta_v=4000,         
-            number=1,
-            structural_efficiency = 0.15
+            number=1
         )
 
 
@@ -151,7 +150,8 @@ class Launcher:
         return tw_ratio
     
     #Final mass calculation using the given structural efficiency
-    def final_payload_mass(self, structural_efficiency, verbose=True):
+    def final_payload_mass(self, str_eff, verbose=True):
+        structural_efficiency = str_eff
         Ve = 0.0
         
         current_m0 = self.total_mass 
@@ -165,13 +165,19 @@ class Launcher:
             Ve = stg.Isp * self.data.gravity
 
             K = np.exp(stg.delta_v / Ve)
+            
             m_after_burn = current_m0 / K
-            m_propellant = current_m0 - m_after_burn
-            m_structure = alpha * m_propellant
             
-
+            m_structure = alpha * (current_m0 - m_after_burn)
             
-
+            if m_after_burn <= 0:
+                print(f"Stage {stage_key} => m_after_burn <= 0")
+                return 0.0
+            
+            m_propellant = current_m0 - m_after_burn 
+            
+        
+        
             if verbose:
                 print(f"Stage {stage_key} => dv={stg.delta_v:.1f} m/s | "
                     f"m_prop={m_propellant:.1f} kg | m_struct={m_structure:.1f} kg")
@@ -180,18 +186,17 @@ class Launcher:
 
             if stage_key == "core":
                 current_m0 -= self.data.mass_payload_1
-                
             if current_m0 <= 0:
                 return 0.0
 
         return current_m0
     
-    def optimal_efficiency(self, target_payload: float): 
-        #searching for the optimal structural efficiency until desired final mass is reached
-        current_eff =  0.15
+    def optimal_efficiency(self, target_payload: float):
+         
+        current_eff =  0.99
         
         while current_eff > 0:
-            payload = self.final_payload_mass(structural_efficiency=current_eff, verbose=False)
+            payload = self.final_payload_mass(str_eff=current_eff, verbose=False)
             if payload >= target_payload:
                 print(f"Found structural efficiency ~ {current_eff:.2f} => payload ~ {payload:.1f} kg")
                 return
@@ -210,4 +215,4 @@ if __name__ == "__main__":
     print(f"Final payload mass (default efficiency={launcher.structural_efficiency:.2f}) ~ {leftover:.1f} kg")
 
     print("\nSearching for an optimal structural efficiency to get desired payload...")
-    launcher.optimal_efficiency(10500)
+    launcher.optimal_efficiency(10000)

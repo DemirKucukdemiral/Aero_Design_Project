@@ -13,6 +13,7 @@
 
 import numpy as np
 from dataclasses import dataclass
+
 """
 This script uses a dataclass to store the information about the stages 
 of a launcher. The Launcher class uses this data to calculate the 
@@ -45,12 +46,12 @@ class Launcher_Data:
 
         self.lpb = Stage(
             name="Liquid Propellant Booster",
-            launch_mass=100000 * 4,   
+            launch_mass=110000 * 4,   
             Isp=363,                  
-            thrust_vac=2279000 * 4,   
-            thrust_sl=2279000 * 4,    
+            thrust_vac=2279000 * 16,   
+            thrust_sl=2279000 * 16,    
             burn_time=130,
-            delta_v=2700,
+            delta_v=3000,
             number=1
         )
 
@@ -61,20 +62,19 @@ class Launcher_Data:
             thrust_vac=900000, 
             thrust_sl=900000,  
             burn_time=540,       
-            delta_v=5000,       
+            delta_v=4000,       
             number=1
         )
 
         self.upper_stage = Stage(
             name="Upper Stage",
-            launch_mass=10000,    
+            launch_mass=30000,    
             Isp=410,              
             thrust_vac=66700,    
             thrust_sl=0,          
             burn_time=500,        
-            delta_v= 2700,         
-            number=1,
-            structural_efficiency = 0.15
+            delta_v=4000,         
+            number=1
         )
 
 
@@ -125,7 +125,7 @@ class Launcher:
         self.time = 0
         self.total_mass = self.data.total_mass
         
-        self.structural_efficiency = 0.06
+        self.structural_efficiency = 0.09
         
         self.number_of_stages = 3
 
@@ -151,69 +151,52 @@ class Launcher:
         return tw_ratio
     
     #Final mass calculation using the given structural efficiency
-    def final_payload_mass(self, structural_efficiency, verbose=True):
-        """
-        Calculates final remaining rocket mass after all stage burns,
-        ensuring each stage's "launch_mass" is fully subtracted (propellant + structure).
-
-        Manual override for upper stage efficiency is retained.
-        """
-
-        current_m0 = self.total_mass  # Start with full rocket mass
+    def final_payload_mass(self, str_eff, verbose=True):
+        structural_efficiency = (2*str_eff + 0.15)/3
+        
+        Ve = 0.0
+        
+        current_m0 = self.total_mass 
 
         for stage_key in ["lpb", "core", "upper"]:
+            
+            alpha = structural_efficiency / (1 - structural_efficiency)
             stg = self.stages[stage_key]
-            g = self.data.gravity
-            Ve = stg.Isp * g
+            Ve = stg.Isp * self.data.gravity
 
-            # Apply manual override for upper stage efficiency
-            if stage_key == "upper":
-                stage_efficiency = 0.15
-            else:
-                stage_efficiency = structural_efficiency  # Use default efficiency for other stages
-
-            # Compute α based on structural efficiency
-            alpha = stage_efficiency / (1 - stage_efficiency)
-
-            # Compute propellant and structural mass
-            m_stage_propellant = stg.launch_mass / (1.0 + alpha)
-            m_stage_structure = stg.launch_mass - m_stage_propellant  # Ensures sum = launch_mass
-
-            # Check if this stage can provide the needed Δv
-            if (current_m0 - stg.launch_mass) <= 0:
-                return 0.0  # If we don't have enough mass, mission fails
-
-            dv_available = Ve * np.log(current_m0 / (current_m0 - stg.launch_mass))
-
-            if dv_available < stg.delta_v:
-                print(f"Stage {stage_key} cannot provide required Δv of {stg.delta_v} m/s "
-                    f"(only {dv_available:.1f} m/s). Mission fail.")
-                return 0.0  # If the stage does not provide enough Δv, we fail
-
-            # Print stage details
+            K = np.exp(stg.delta_v / Ve)
+            
+            m_after_burn = current_m0 / K
+            
+            m_structure = alpha * (current_m0 - m_after_burn)
+            
+            if m_after_burn <= 0:
+                print(f"Stage {stage_key} => m_after_burn <= 0")
+                return 0.0
+            
+            m_propellant = current_m0 - m_after_burn 
+            
+        
+        
             if verbose:
-                print(f"Stage {stage_key} => dv_required={stg.delta_v:.1f} m/s | "
-                    f"dv_avail={dv_available:.1f} m/s | "
-                    f"m_prop={m_stage_propellant:.1f} kg | m_struct={m_stage_structure:.1f} kg")
+                print(f"Stage {stage_key} => dv={stg.delta_v:.1f} m/s | "
+                    f"m_prop={m_propellant:.1f} kg | m_struct={m_structure:.1f} kg")
 
-            # Subtract stage's total mass (propellant + structure) from the total stack
-            current_m0 -= stg.launch_mass  
+            current_m0 = m_after_burn - m_structure
 
-            # Remove mass_payload_1 after the core stage
             if stage_key == "core":
                 current_m0 -= self.data.mass_payload_1
-                if current_m0 <= 0:
-                    return 0.0
+            if current_m0 <= 0:
+                return 0.0
 
-        # Remaining mass after all stages
         return current_m0
     
-    def optimal_efficiency(self, target_payload: float): 
-        #searching for the optimal structural efficiency until desired final mass is reached
-        current_eff =  0.15
+    def optimal_efficiency(self, target_payload: float):
+         
+        current_eff =  0.99
         
         while current_eff > 0:
-            payload = self.final_payload_mass(structural_efficiency=current_eff, verbose=False)
+            payload = self.final_payload_mass(str_eff=current_eff, verbose=False)
             if payload >= target_payload:
                 print(f"Found structural efficiency ~ {current_eff:.2f} => payload ~ {payload:.1f} kg")
                 return
