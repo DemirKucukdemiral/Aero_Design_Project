@@ -48,8 +48,8 @@ class Launcher_Data:
             name="Liquid Propellant Booster",
             launch_mass=110000 * 4,   
             Isp=363,                  
-            thrust_vac=2279000 * 16,   
-            thrust_sl=2279000 * 16,    
+            thrust_vac=2279000 * 4,   
+            thrust_sl=2279000 * 4,    
             burn_time=130,
             delta_v=3000,
             number=1
