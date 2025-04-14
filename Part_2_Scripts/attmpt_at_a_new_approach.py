@@ -1,223 +1,66 @@
-
-###===--------------------------------------------===###
-# Script:       main.py
-# Authors:      Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, 
-#               Cameron Norrington 2873038N, Adam Burns 2914690B, 
-#               Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
-# Created on:   2025-02-28
-# Last Modified: 2025-02-28
-# Description:  optimal structural efficiency solver for a concpet launcher
-# Version:      1.0
-###===--------------------------------------------===###    
-
-
 import numpy as np
-from dataclasses import dataclass
 
-"""
-This script uses a dataclass to store the information about the stages 
-of a launcher. The Launcher class uses this data to calculate the 
-thrust-to-weight ratio and the final payload mass given some initial 
-totoal mass, engine data, phase information and required final velocity.
-"""
+GRAVITY = 9.81  
 
-@dataclass
 class Stage:
-    name: str
-    launch_mass: float
-    Isp: float
-    thrust_vac: float
-    thrust_sl: float
-    burn_time: float
-    delta_v: float
-    number: int
-    structural_efficiency: float = 0.0
+    def __init__(self, name, dry_mass, prop_mass, Isp, delta_v):
 
-class Launcher_Data:
-    def __init__(self):
-        """
-        Initi function to declare or parameters, phases and stage informations
-        also declares all engine informations.
-        """
-        self.gravity = 9.81
-        
-        self.mass_payload_1 = 21100  
-        self.mass_payload_2 = 10010 
+        self.name      = name
+        self.dry_mass  = dry_mass
+        self.prop_mass = prop_mass
+        self.Isp       = Isp
+        self.delta_v   = delta_v
+        stage_total_mass   = self.dry_mass + self.prop_mass
+        self.struct_eff    = self.dry_mass / stage_total_mass if stage_total_mass > 0 else 0.0
 
-        self.lpb = Stage(
-            name="Liquid Propellant Booster",
-            launch_mass=110000 * 4,   
-            Isp=363,                  
-            thrust_vac=2279000 * 16,   
-            thrust_sl=2279000 * 16,    
-            burn_time=130,
-            delta_v=3000,
-            number=1
-        )
+stages = [
+    Stage(name="Booster", dry_mass=45000, prop_mass=800000, Isp=327, delta_v=3000),
+    Stage(name="Core",    dry_mass=31500, prop_mass=450000, Isp=338, delta_v=4000),
+    Stage(name="Upper",   dry_mass=15100, prop_mass=60000, Isp=410, delta_v=2200)
+]
 
-        self.core_stage = Stage(
-            name="Core Stage",
-            launch_mass=300000,   
-            Isp=300,            
-            thrust_vac=900000, 
-            thrust_sl=900000,  
-            burn_time=540,       
-            delta_v=4000,       
-            number=1
-        )
+payload_mass = 10000  
 
-        self.upper_stage = Stage(
-            name="Upper Stage",
-            launch_mass=30000,    
-            Isp=410,              
-            thrust_vac=66700,    
-            thrust_sl=0,          
-            burn_time=500,        
-            delta_v=4000,         
-            number=1
-        )
+current_mass = payload_mass + sum(stg.dry_mass + stg.prop_mass for stg in stages)
+print(f"Initial total mass at liftoff = {current_mass:.1f} kg")
+
+for i, stage in enumerate(stages):
+    print(f"\n--- Stage {i+1}: {stage.name} ---")
+
+    print(f"Structural efficiency = {stage.struct_eff:.3f} "
+          f"(dry={stage.dry_mass:.1f} / total={stage.dry_mass + stage.prop_mass:.1f})")
+    
+    m0 = current_mass
+
+    ideal_mass_ratio = np.exp(stage.delta_v / (stage.Isp * GRAVITY))
+    mf_ideal = m0 / ideal_mass_ratio
 
 
-        self.stages = {
-            "lpb":   self.lpb,
-            "core":  self.core_stage,
-            "upper": self.upper_stage
-        }
+    if (m0 - mf_ideal) > stage.prop_mass:
+        print("Warning: not enough propellant to provide the full delta_v!")
 
-       
-        self.total_mass = (
-            self.mass_payload_1
-            + self.mass_payload_2
-            + self.lpb.launch_mass * self.lpb.number
-            + self.core_stage.launch_mass * self.core_stage.number
-            + self.upper_stage.launch_mass * self.upper_stage.number
-        )
+        mass_lost = stage.prop_mass
+        mf_actual = m0 - mass_lost
+        actual_dv = stage.Isp * GRAVITY * np.log(m0 / mf_actual)
+        print(f"Stage can only deliver {actual_dv:.1f} m/s instead of {stage.delta_v} m/s.")
+    else:
+        mf_actual = mf_ideal
+        mass_lost = m0 - mf_actual
+    
+    prop_burned = mass_lost
 
-        
-        self.phases = [
-            {
-                "name": "lpb",
-                "active_stages": ["lpb", "core", "upper"],
-                "drop_stages":   ["lpb"],
-                "jettison_fairing": False,
-                "active_engine": ["lpb"]  
-            },
-            {
-                "name": "core",
-                "active_stages": ["core", "upper"],
-                "drop_stages":   ["core"],
-                "jettison_fairing": True, 
-                "active_engine": ["core"]  
-            },
-            {
-                "name": "upper",
-                "active_stages": ["upper"],
-                "drop_stages":   ["upper"],
-                "jettison_fairing": False,
-                "active_engine": ["upper"]  
-            }
-        ]
-class Launcher:
-
-    def __init__(self):
-        self.data = Launcher_Data()
-        
-        self.time = 0
-        self.total_mass = self.data.total_mass
-        
-        self.structural_efficiency = 0.07
-        
-        self.number_of_stages = 3
-
-        self.phases = self.data.phases      
-        self.stages = self.data.stages      
-
-    def Thrust_to_weight(self, phase: str) -> float: 
-        phase_info = None
-        for p in self.phases:
-            if p["name"] == phase:
-                phase_info = p
-                break
-        if phase_info is None:
-            raise ValueError(f"Invalid phase '{phase}' in Thrust_to_weight().")
-
-        total_thrust_sl = 0.0
-        for engine_name in phase_info["active_engine"]:
-            stage_obj = self.stages[engine_name]
-            total_thrust_sl += stage_obj.thrust_sl * stage_obj.number
-
-        tw_ratio = total_thrust_sl / (self.total_mass * self.data.gravity)
-        return tw_ratio
+    print(f"Stage start mass (m0)  = {m0:.1f} kg")
+    print(f"Propellant burned      = {prop_burned:.1f} kg (of {stage.prop_mass:.1f} available)")
     
 
-    def final_payload_mass(self, str_eff, verbose=True):
-        current_m0 = self.total_mass  
-        upper_stage_eff = 0.15  
-
-        for phase in self.phases:
-            active_stages = phase["active_stages"]
-            
-  
-            stage_key = phase["drop_stages"][0]  
-            stg = self.stages[stage_key]
-
-       
-            total_active_mass = sum(self.stages[s].launch_mass for s in active_stages)
-            weighted_efficiency = sum(
-                (self.stages[s].launch_mass / total_active_mass) * 
-                (upper_stage_eff if s == "upper" else str_eff)
-                for s in active_stages
-            )
-
-            alpha = weighted_efficiency / (1 - weighted_efficiency)
-            
-            Ve = stg.Isp * self.data.gravity
-            K = np.exp(stg.delta_v / Ve)
-            m_after_burn = current_m0 / K
-            m_structure = alpha * (current_m0 - m_after_burn)
-
-            if m_after_burn <= 0:
-                return 0.0
-
-            if verbose:
-                print(f"Stage {stage_key} => Δv={stg.delta_v:.1f} m/s | "
-                    f"m_propellant={current_m0 - m_after_burn:.1f} kg | "
-                    f"m_structure={m_structure:.1f} kg")
-
-            
-            current_m0 = m_after_burn - m_structure
-
-   
-            if stage_key == "core":
-                current_m0 -= self.data.mass_payload_1
-
-            if current_m0 <= 0:
-                return 0.0
-
-        return current_m0  
+    mass_after_drop = mf_actual - stage.dry_mass
+    if mass_after_drop < 0:
+        print("Error: negative rocket mass after dropping stage. Check your stage data!")
+        mass_after_drop = 0
     
-    def optimal_efficiency(self, target_payload: float):
-         
-        current_eff =  0.99
-        
-        while current_eff > 0:
-            payload = self.final_payload_mass(str_eff=current_eff, verbose=False)
-            if payload >= target_payload:
-                print(f"Found structural efficiency ~ {current_eff:.2f} => payload ~ {payload:.1f} kg")
-                return
-            current_eff -= 0.001
-        
-        print("Could not achieve the desired payload with the given model.")
-            
+    current_mass = mass_after_drop
+    print(f"Dropping stage dry mass => {stage.dry_mass:.1f} kg")
+    print(f"Mass after dropping    = {current_mass:.1f} kg")
 
-if __name__ == "__main__":
-    launcher = Launcher()
-    
-    tw_lpb = launcher.Thrust_to_weight("lpb")
-    print(f"T/W ratio during LPB phase: {tw_lpb:.3f}")
-    
-    leftover = launcher.final_payload_mass(launcher.structural_efficiency, verbose=True)
-    print(f"Final payload mass (default efficiency={launcher.structural_efficiency:.2f}) ~ {leftover:.1f} kg")
-
-    print("\nSearching for an optimal structural efficiency to get desired payload...")
-    launcher.optimal_efficiency(10000)
+print(f"\nFinal rocket mass after all stages = {current_mass:.1f} kg")
+print(f"Desired payload mass               = {payload_mass:.1f} kg")

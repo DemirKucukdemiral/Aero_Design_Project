@@ -36,17 +36,17 @@ class Stage:
 class Launcher_Data:
     def __init__(self):
         """
-        Initi function to declare or parameters, phases and stage informations
+        Init function to declare or parameters, phases and stage informations
         also declares all engine informations.
         """
         self.gravity = 9.81
-        
+
         self.mass_payload_1 = 21100  
         self.mass_payload_2 = 10010 
 
         self.lpb = Stage(
             name="Liquid Propellant Booster",
-            launch_mass=110000 * 4,   
+            launch_mass=513044.4 + 40257.5,   # was 110000 * 4
             Isp=363,                  
             thrust_vac=2279000 * 4,   
             thrust_sl=2279000 * 4,    
@@ -57,10 +57,10 @@ class Launcher_Data:
 
         self.core_stage = Stage(
             name="Core Stage",
-            launch_mass=300000,   
-            Isp=300,            
-            thrust_vac=900000, 
-            thrust_sl=900000,  
+            launch_mass=265468.9 + 21705.0,   # was 300000
+            Isp=283,            
+            thrust_vac=3.6e6, 
+            thrust_sl=3.6e6,  
             burn_time=540,       
             delta_v=4000,       
             number=1
@@ -117,6 +117,7 @@ class Launcher_Data:
                 "active_engine": ["upper"]  
             }
         ]
+
 class Launcher:
 
     def __init__(self):
@@ -205,7 +206,7 @@ class Launcher:
             if payload >= target_payload:
                 print(f"Found structural efficiency ~ {current_eff:.2f} => payload ~ {payload:.1f} kg")
                 return
-            current_eff -= 0.001
+            current_eff -= 0.01
         
         print("Could not achieve the desired payload with the given model.")
             
@@ -221,3 +222,5 @@ if __name__ == "__main__":
 
     print("\nSearching for an optimal structural efficiency to get desired payload...")
     launcher.optimal_efficiency(10000)
+
+
