@@ -159,7 +159,7 @@ class Launcher:
         for stage_key in ["lpb", "core", "upper"]:
             if stage_key == "upper":
                 structural_efficiency = 0.15
-
+            
             alpha = structural_efficiency / (1 - structural_efficiency)
             stg = self.stages[stage_key]
             Ve = stg.Isp * self.data.gravity
