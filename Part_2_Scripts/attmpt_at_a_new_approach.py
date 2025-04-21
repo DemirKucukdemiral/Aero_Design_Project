@@ -1,3 +1,12 @@
+###===--------------------------------------------===###
+# Script:        main.py
+# Authors:       Demir Kucukdemiral 2883935K, Charikleia Nikou 2881802N, Cameron Norrington 2873038N, Adam Burns 2914690B, Ben Maconnachie 2911209M, Jeremi Rozanski 2881882R
+# Created on:    2025-04
+# Last Modified: 2025-04
+# Description:   Structural efficiency and propellant mass calculation for a multi-stage rocket
+# Version:       1.0
+###===--------------------------------------------===###  
+
 import numpy as np
 
 GRAVITY = 9.81  
