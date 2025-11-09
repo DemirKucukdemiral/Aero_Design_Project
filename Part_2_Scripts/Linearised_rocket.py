@@ -12,7 +12,7 @@ class MPC:
         self.M = 5.972e24
         self.R = 8371.0  
         self.g = 9.81
-        self.m = 30.0
+        self.m = 60.0
         self.ell = 13.0
         self.radius = 5.0
         self.J = 0.25 * self.m * self.radius**2 + 1/12 * self.m * self.ell**2
@@ -21,11 +21,11 @@ class MPC:
 
         # constraints
         self.umin = [0, -math.pi/4, -200]
-        self.umax = [900, math.pi/4, 200]
+        self.umax = [2000, math.pi/4, 200]
 
         # MPC parameters
-        self.h = 0.05       
-        self.Nh = 120       
+        self.h = 0.1       
+        self.Nh = 200       
         self.nx = 6         
         self.nu = 3          
 
@@ -144,7 +144,7 @@ class MPC:
 class Simulator:
     def __init__(self, mpc, x_refs, threshold=0.01):
         self.mpc = mpc
-        self.Tfinal = 8.0
+        self.Tfinal = 15.0
         self.Nt = int(self.Tfinal / self.mpc.h)
         self.t_hist = np.linspace(0, self.Tfinal, self.Nt)
         self.xhist = np.zeros((self.mpc.nx, self.Nt))
